@@ -182,30 +182,27 @@ with suppress(KeyError, OSError):
     with suppress(Exception):
       tools[tool] = register(tool, os.path.join(dir, tool))
 
-try:
-  while True:
-    for id, call in pending.items():
-      result = {
-        'type': 'function_call_output', 'call_id': id,
-        'output': '{ "error": { "message": "Invalid function call" } }'
-      }
-      with suppress(Exception):
-        name, arguments = call['name'], call['arguments']
-        if arguments and isinstance(arguments, str):
-          result['output'] = tools[name](arguments)
-      print(json.dumps(result), file = log, flush = True)
-      items.append(result)
-    pending.clear()
+while True:
+  for id, call in pending.items():
+    result = {
+      'type': 'function_call_output', 'call_id': id,
+      'output': '{ "error": { "message": "Invalid function call" } }'
+    }
+    with suppress(Exception):
+      name, arguments = call['name'], call['arguments']
+      if arguments and isinstance(arguments, str):
+        result['output'] = tools[name](arguments)
+    print(json.dumps(result), file = log, flush = True)
+    items.append(result)
+  pending.clear()
 
-    if not items or items[-1].get('role') == 'assistant' \
-        or items[-1].get('type') == 'reasoning':
-      break
+  if not items or items[-1].get('role') == 'assistant' \
+      or items[-1].get('type') == 'reasoning':
+    break
 
-    for item in generate(items, tools):
-      with suppress(KeyError, TypeError):
-        if item['type'] == 'function_call':
-          pending[item['call_id']] = item
-        print(json.dumps(item), file = log, flush = True)
-        items.append(item)
-except OSError as error:
-  die(1, log.name, error.strerror)
+  for item in generate(items, tools):
+    with suppress(KeyError, TypeError):
+      if item['type'] == 'function_call':
+        pending[item['call_id']] = item
+      print(json.dumps(item), file = log, flush = True)
+      items.append(item)
