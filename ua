@@ -18,7 +18,8 @@ def bash(arguments):
   with suppress(Exception):
     arguments = json.loads(arguments)
     try:
-      command = ['bash', '-c', arguments['command']]
+      sandbox = shlex.split(os.environ.get('SANDBOX', ''))
+      command = [*sandbox, 'bash', '-c', arguments['command']]
       process = subprocess.run(command, capture_output = True,
         stdin = subprocess.DEVNULL, timeout = arguments.get('timeout'))
     except subprocess.TimeoutExpired as error:
