@@ -132,7 +132,8 @@ def stream(request, timeout = 30):
     with suppress(Exception):
       if (body := json.load(error.fp))['error']['message']:
         yield body
-    error = getattr(error, 'strerror', getattr(error, 'reason', str(error)))
+    error = getattr(error, 'strerror', None) \
+      or getattr(error, 'reason', None) or str(error)
     yield { 'error': { 'message': error } }
 
 items, pending, tools = [], {}, { 'bash': bash }
