@@ -1,6 +1,6 @@
 #!/bin/python
 
-import fcntl, json, os, re, subprocess, sys, tempfile, urllib.request
+import fcntl, json, os, re, shlex, subprocess, sys, tempfile, urllib.request
 from contextlib import suppress
 
 def bash(arguments):
@@ -104,7 +104,8 @@ def solicit():
       sys.stdin.reconfigure(encoding = 'utf-8', errors = 'strict')
       return sys.stdin.read().strip('\n')
     with tempfile.NamedTemporaryFile() as tmp:
-      subprocess.run([os.getenv('EDITOR', 'vi'), tmp.name], check = True)
+      editor = shlex.split(os.environ.get('EDITOR') or 'vi')
+      subprocess.run([*editor, tmp.name], check = True)
       with open(tmp.name, 'r', encoding = 'utf-8') as tmp:
         text = tmp.read().strip('\n')
         if text and sys.stdout.isatty():
@@ -114,6 +115,8 @@ def solicit():
     die(1, error.strerror)
   except UnicodeError:
     die(1, 'Invalid UTF-8 input')
+  except ValueError:
+    die(1, 'Malformed EDITOR')
   except subprocess.CalledProcessError:
     sys.exit(1)
 
