@@ -1,5 +1,11 @@
 ua() {
-  if [[ $1 == setup ]]; then
+  if [[ $# -eq 0 ]]; then
+    if [[ -z $API || -z $KEY || -z $LOG || -z $MODEL || ! -f $LOG ]]; then
+      ua setup
+    else
+      ua user && ua agent
+    fi
+  elif [[ $1 == setup ]]; then
     export API=${API:-https://openrouter.ai/api/v1/responses}
     export LOG=$(realpath -- "${2:-${LOG:-ua.log}}")
     export MODEL=${3:-${MODEL:-anthropic/claude-opus-4.6}}

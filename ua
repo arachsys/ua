@@ -139,14 +139,14 @@ items, pending, tools = [], {}, { 'bash': bash }
 sys.tracebacklimit = 0
 
 match sys.argv[1:]:
-  case [] | ['agent'] | ['assistant']:
+  case ['agent'] | ['assistant'] | ['continue']:
     role, text = None, None
   case ['abort']:
     role, text = True, None
   case ['developer'] | ['system'] | ['user']:
     role, text = sys.argv[1], solicit()
   case _:
-    die(64, f'Usage: {os.path.basename(sys.argv[0])} [ROLE]')
+    die(64, f'Usage: {os.path.basename(sys.argv[0])} ROLE')
 
 try:
   path = os.environ.setdefault('LOG', 'ua.log')
