@@ -108,10 +108,7 @@ def solicit():
       editor = shlex.split(os.environ.get('EDITOR') or 'vi')
       subprocess.run([*editor, tmp.name], check = True)
       with open(tmp.name, 'r', encoding = 'utf-8') as tmp:
-        text = tmp.read().strip('\n')
-        if text and sys.stdout.isatty():
-          print(f'\033[3m{text}\033[0m')
-        return text
+        return tmp.read().strip('\n')
   except OSError as error:
     die(1, error.strerror)
   except UnicodeError:
