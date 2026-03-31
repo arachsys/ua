@@ -1,0 +1,17 @@
+#!/bin/bash -e
+
+if [[ $# -eq 3 ]] && [[ $1 == ?(ba)sh ]] && [[ $2 == -c ]]; then
+  printf -v PROMPT '$ %s\nAllow execution? (Y/n) ' "$3"
+else
+  printf -v PROMPT '$ %s\nAllow execution? (Y/n) ' "${*@Q}"
+fi
+
+read -p "$PROMPT" -r REPLY <>/dev/tty >&0 2>&0
+
+if [[ $? -eq 0 ]] && [[ $REPLY == ?([Yy]*) ]]; then
+  export -n SANDBOX
+  exec "$@"
+else
+  echo 'User denied permission to execute this command' >&2
+  exit 1
+fi
