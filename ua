@@ -57,6 +57,7 @@ def bash(arguments):
       sandbox = shlex.split(os.environ.get('SANDBOX', ''))
       command = [*sandbox, 'bash', '-c', arguments['command']]
       process = subprocess.run(command, capture_output = True,
+        env = { k: v for k, v in os.environ.items() if k != 'SANDBOX' },
         stdin = subprocess.DEVNULL, timeout = arguments.get('timeout'))
     except subprocess.TimeoutExpired as error:
       process =  subprocess.CompletedProcess(error.cmd, 124,

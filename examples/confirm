@@ -9,7 +9,6 @@ fi
 read -p "$PROMPT" -r REPLY <>/dev/tty >&0 2>&0
 
 if [[ $? -eq 0 ]] && [[ $REPLY == ?([Yy]*) ]]; then
-  export -n SANDBOX
   exec "$@"
 else
   echo 'User denied permission to execute this command' >&2
