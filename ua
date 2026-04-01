@@ -3,6 +3,42 @@
 import fcntl, json, os, re, shlex, subprocess, sys, tempfile, urllib.request
 from contextlib import suppress
 
+def abort(items, pending):
+  for id in pending:
+    result = {
+      'type': 'function_call_output', 'call_id': id,
+      'output': '{ "error": { "message": "Function call aborted" } }'
+    }
+    print(json.dumps(result), file = log, flush = True)
+    items.append(result)
+  pending.clear()
+
+def agent(items, pending, tools):
+  while True:
+    for id, call in pending.items():
+      result = {
+        'type': 'function_call_output', 'call_id': id,
+        'output': '{ "error": { "message": "Invalid function call" } }'
+      }
+      with suppress(Exception):
+        name, arguments = call['name'], call['arguments']
+        if arguments and isinstance(arguments, str):
+          result['output'] = tools[name](arguments)
+      print(json.dumps(result), file = log, flush = True)
+      items.append(result)
+    pending.clear()
+
+    if not items or items[-1].get('role') == 'assistant' \
+        or items[-1].get('type') == 'reasoning':
+      break
+
+    for item in generate(items, tools):
+      with suppress(KeyError, TypeError):
+        if item['type'] == 'function_call':
+          pending[item['call_id']] = item
+        print(json.dumps(item), file = log, flush = True)
+        items.append(item)
+
 def bash(arguments):
   def trim(data, head = 2048, tail = 8192):
     if len(data) > head + tail:
@@ -49,7 +85,7 @@ bash.schema = {
 }
 
 def die(status, *args):
-  print(*args, file = sys.stderr, sep = ': ')
+  print(os.path.basename(sys.argv[0]), *args, file = sys.stderr, sep = ': ')
   sys.exit(status)
 
 def generate(input, tools):
@@ -90,6 +126,27 @@ def generate(input, tools):
         case 'response.incomplete':
           if reason := chunk['response']['incomplete_details']['reason']:
             print('Truncated:', reason, end = '\n\n')
+
+def input(items, role):
+  if text := solicit():
+    result = { 'type': 'message', 'role': role, 'content': text }
+    print(json.dumps(result), file = log, flush = True)
+    items.append(result)
+
+def recap(items):
+  for item in items:
+    with suppress(KeyError, TypeError):
+      if item['type'] != 'message':
+        continue
+      if isinstance(item['content'], list):
+        for content in item['content']:
+          with suppress(KeyError, TypeError):
+            print(content['text'].strip('\n'), end = '\n\n')
+          for annotation in content['annotations']:
+            with suppress(KeyError, TypeError):
+              print('Reference:', annotation['url'], end = '\n\n')
+      if isinstance(item['content'], str):
+        print(item['content'], end = '\n\n')
 
 def register(name, path):
   def run(arguments):
@@ -133,18 +190,22 @@ def stream(request, timeout = 30):
       or getattr(error, 'reason', None) or str(error)
     yield { 'error': { 'message': error } }
 
+def usage():
+  print(f'''\
+Usage: {os.path.basename(sys.argv[0])} [ACTION]...
+Actions:
+  abort     abort all pending function calls
+  agent     request a response from the model
+  recap     print the conversation history
+  system    add a system message to the conversation
+  user      add a user message to the conversation
+Default action: user, agent
+Environment: API, KEY, LOG, MODEL, SANDBOX, TOOLS
+''', end = '', file = sys.stderr)
+  sys.exit(64)
+
 items, pending, tools = [], {}, { 'bash': bash }
 sys.tracebacklimit = 0
-
-match sys.argv[1:]:
-  case ['agent'] | ['assistant'] | ['continue']:
-    role, text = None, None
-  case ['abort']:
-    role, text = True, None
-  case ['developer'] | ['system'] | ['user']:
-    role, text = sys.argv[1], solicit()
-  case _:
-    die(64, f'Usage: {os.path.basename(sys.argv[0])} ROLE')
 
 try:
   path = os.environ.setdefault('LOG', 'ua.log')
@@ -168,43 +229,20 @@ for item in items:
     if item['type'] == 'function_call_output':
       del pending[item['call_id']]
 
-if role:
-  for id in pending:
-    print(json.dumps({
-      'type': 'function_call_output', 'call_id': id,
-      'output': '{ "error": { "message": "Function call aborted" } }'
-    }), file = log, flush = True)
-  if text:
-    print(json.dumps({ 'type': 'message', 'role': role, 'content': text }),
-      file = log, flush = True)
-  sys.exit(0)
-
 with suppress(KeyError, OSError):
   for tool in os.listdir(dir := os.environ['TOOLS']):
     with suppress(Exception):
       tools[tool] = register(tool, os.path.join(dir, tool))
 
-while True:
-  for id, call in pending.items():
-    result = {
-      'type': 'function_call_output', 'call_id': id,
-      'output': '{ "error": { "message": "Invalid function call" } }'
-    }
-    with suppress(Exception):
-      name, arguments = call['name'], call['arguments']
-      if arguments and isinstance(arguments, str):
-        result['output'] = tools[name](arguments)
-    print(json.dumps(result), file = log, flush = True)
-    items.append(result)
-  pending.clear()
-
-  if not items or items[-1].get('role') == 'assistant' \
-      or items[-1].get('type') == 'reasoning':
-    break
-
-  for item in generate(items, tools):
-    with suppress(KeyError, TypeError):
-      if item['type'] == 'function_call':
-        pending[item['call_id']] = item
-      print(json.dumps(item), file = log, flush = True)
-      items.append(item)
+for action in sys.argv[1:] or ['user', 'agent']:
+  match action:
+    case 'abort':
+      abort(items, pending)
+    case 'agent' | 'continue':
+      agent(items, pending, tools)
+    case 'developer' | 'system' | 'user':
+      input(items, action)
+    case 'recap':
+      recap(items)
+    case _:
+      usage()
