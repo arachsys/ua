@@ -3,7 +3,7 @@
 import fcntl, json, os, re, shlex, subprocess, sys, tempfile, urllib.request
 from contextlib import suppress
 
-def abort(items, pending):
+def abort(items, log, pending):
   for id in pending:
     result = {
       'type': 'function_call_output', 'call_id': id,
@@ -13,7 +13,7 @@ def abort(items, pending):
     items.append(result)
   pending.clear()
 
-def agent(items, pending, tools):
+def agent(items, log, pending, tools):
   while True:
     for id, call in pending.items():
       result = {
@@ -127,7 +127,7 @@ def generate(input, tools):
           if reason := chunk['response']['incomplete_details']['reason']:
             print('Truncated:', reason, end = '\n\n')
 
-def input(items, role):
+def input(items, log, role):
   if text := solicit():
     result = { 'type': 'message', 'role': role, 'content': text }
     print(json.dumps(result), file = log, flush = True)
@@ -237,11 +237,11 @@ with suppress(KeyError, OSError):
 for action in sys.argv[1:] or ['user', 'agent']:
   match action:
     case 'abort':
-      abort(items, pending)
+      abort(items, log, pending)
     case 'agent' | 'continue':
-      agent(items, pending, tools)
+      agent(items, log, pending, tools)
     case 'developer' | 'system' | 'user':
-      input(items, action)
+      input(items, log, action)
     case 'recap':
       recap(items)
     case _:
