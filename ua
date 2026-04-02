@@ -163,18 +163,14 @@ def solicit():
       sys.stdin.reconfigure(encoding = 'utf-8', errors = 'strict')
       return sys.stdin.read().strip('\n')
     with tempfile.NamedTemporaryFile() as tmp:
-      editor = shlex.split(os.environ.get('EDITOR') or 'vi')
-      subprocess.run([*editor, tmp.name], check = True)
+      if os.system(f'${{EDITOR:-vi}} {shlex.quote(tmp.name)}') != 0:
+        sys.exit(1)
       with open(tmp.name, 'r', encoding = 'utf-8') as tmp:
         return tmp.read().strip('\n')
   except OSError as error:
     die(1, error.strerror)
   except UnicodeError:
     die(1, 'Invalid UTF-8 input')
-  except ValueError:
-    die(1, 'Malformed EDITOR')
-  except subprocess.CalledProcessError:
-    sys.exit(1)
 
 def stream(request, timeout = 30):
   try:
