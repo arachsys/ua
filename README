@@ -1,0 +1,73 @@
+ua
+==
+
+ua is a minimal agent harness, providing a command-line interface to a
+large language model accessed through an Open Responses API, and allowing
+it to access local tools including a bash shell.
+
+
+Installation and configuration
+------------------------------
+
+A single Python 3.12+ script 'ua' is provided. Ensure the #! path is
+correct for your system before copying it to a directory on your path.
+The tool has no dependencies beyond the standard library. It is configured
+through the environment.
+
+Set API, KEY and MODEL to the endpoint, bearer key and model ID, e.g.
+
+  export API=https://openrouter.ai/api/v1/responses
+  export KEY=sk-or-v1-xxx
+  export MODEL=anthropic/claude-opus-4.6
+
+ua appends to an NDJSON conversation log in LOG, defaulting to 'ua.log'.
+
+The bash tool is built-in, but a directory of additional self-describing
+tool executables can be given in TOOLS. Each of these should read JSON
+input on stdin then produce JSON output on stdout. If stdin is empty,
+they should instead print their JSON input schema.
+
+If SANDBOX is set, bash calls are wrapped with it, i.e. 'bash -c CMD'
+is run as 'SANDBOX bash -c CMD'. This can be used to confirm commands
+before execution, drop to a less privileged user, sandbox within more
+restrictive namespaces, or even run commands on a different host.
+
+
+User input
+----------
+
+'ua system' and 'ua user' add a new system or user message to the log.
+If stdin is a terminal, ua will get the message text via a text editor;
+otherwise, it will read it directly from stdin.
+
+An example system message explaining how the bash tool might be used is
+provided in examples/system.txt.
+
+
+Agent loop
+----------
+
+'ua agent' repeatedly calls the model, streaming assistant messages to
+stdout and executing any tool calls. All generated items are appended
+to the log. The loop terminates once the model has returned a finished
+response to the user.
+
+Running 'ua' without arguments is a shortcut for 'ua user agent'. It takes
+a message from the user then immediately invites the model to reply.
+
+
+Other actions
+-------------
+
+'ua abort' aborts any pending function calls in the log. This is useful
+if you want to interrupt the model to provide updated instructions,
+and when prompting the model to fork copies of its own state.
+
+'ua recap' will print the message history from the log to stdout.
+
+
+Copying
+-------
+
+This software was written by Chris Webb <chris@arachsys.com> and is
+distributed as Free Software under the terms of the MIT license in COPYING.
