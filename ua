@@ -183,7 +183,7 @@ def stream(request, timeout = 30):
         if line.startswith(b'data:'):
           with suppress(json.JSONDecodeError):
             yield json.loads(line[5:])
-  except (OSError, urllib.error.URLError) as error:
+  except OSError as error:
     with suppress(Exception):
       if (body := json.load(error.fp))['error']['message']:
         yield body
