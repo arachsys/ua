@@ -9,7 +9,7 @@ output into `head`, `tail` or `sed -n START,ENDp` for large files.
 `cat >FILE <<'EOF'` rewrites a file, and `cat >>FILE <<'EOF'` appends to
 it, but prefer unified diffs for surgical edits:
 ```
-git apply --no-index --recount <<'EOF'
+git apply --no-index --recount --unidiff-zero <<'EOF'
 --- a/FILE
 +++ b/FILE
 @@ -67,4 +67,4 @@
@@ -22,7 +22,9 @@ EOF
 ```
 Line numbers in `@@` hunk headers need only be approximate and counts
 are corrected automatically by `--recount`. Make sure context lines have
-a leading space even if they are blank. Changes are applied atomically;
-no file is modified if any hunk fails to apply.
+a leading space even if they are blank, whereas the final EOF is not
+indented. A simple replacement can have just - and + lines, but remember
+it matches exactly once, closest to the specified start line. Changes are
+applied atomically; no file is modified if any hunk fails to apply.
 
-`sed -i` also works well for small, mechanical, pattern-based changes.
+`sed -i` and `awk` also work well for mechanical, pattern-based changes.
