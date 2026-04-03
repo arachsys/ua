@@ -168,7 +168,7 @@ def solicit():
       with open(tmp.name, 'r', encoding = 'utf-8') as tmp:
         return tmp.read().strip('\n')
   except OSError as error:
-    die(1, error.strerror)
+    die(1, error.strerror or error)
   except UnicodeError:
     die(1, 'Invalid UTF-8 input')
 
@@ -183,8 +183,8 @@ def stream(request, timeout = 30):
     with suppress(Exception):
       if (body := json.load(error.fp))['error']['message']:
         yield body
-    error = getattr(error, 'strerror', None) \
-      or getattr(error, 'reason', None) or str(error)
+    error = getattr(error, 'reason', None) or error
+    error = getattr(error, 'strerror', None) or str(error)
     yield { 'error': { 'message': error } }
 
 def usage():
@@ -212,7 +212,7 @@ try:
   else:
     log = open(os.devnull, 'r+', encoding = 'utf-8')
 except OSError as error:
-  die(1, path or os.devnull, error.strerror)
+  die(1, path or os.devnull, error.strerror or error)
 
 try:
   for item in log:
