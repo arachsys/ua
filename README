@@ -32,6 +32,9 @@ is run as 'SANDBOX bash -c CMD'. This can be used to confirm commands
 before execution, drop to a less privileged user, sandbox within more
 restrictive namespaces, or even run commands on a different host.
 
+Set SANDBOX to an empty string to execute bash calls without any wrapper.
+If SANDBOX is not defined at all, the built-in bash tool is disabled.
+
 
 User input
 ----------

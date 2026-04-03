@@ -201,7 +201,7 @@ Environment: API, KEY, LOG, MODEL, SANDBOX, TOOLS
 ''', end = '', file = sys.stderr)
   sys.exit(64)
 
-items, pending, tools = [], {}, { 'bash': bash }
+items, pending, tools = [], {}, {}
 sys.tracebacklimit = 0
 
 try:
@@ -226,6 +226,8 @@ for item in items:
     if item['type'] == 'function_call_output':
       del pending[item['call_id']]
 
+if 'SANDBOX' in os.environ:
+  tools['bash'] = bash
 with suppress(KeyError, OSError):
   for tool in os.listdir(dir := os.environ['TOOLS']):
     with suppress(Exception):
