@@ -21,6 +21,7 @@ Set API, KEY and MODEL to the endpoint, bearer key and model ID, e.g.
   export MODEL=anthropic/claude-opus-4.6
 
 ua appends to an NDJSON conversation log in LOG, defaulting to 'ua.log'.
+If LOG is an empty string, /dev/null is used and the log is not locked.
 
 The bash tool is built-in, but a directory of additional self-describing
 tool executables can be given in TOOLS. Each of these should read JSON

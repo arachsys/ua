@@ -205,12 +205,14 @@ items, pending, tools = [], {}, {}
 sys.tracebacklimit = 0
 
 try:
-  path = os.environ.setdefault('LOG', 'ua.log')
-  log = open(path, 'a+', encoding = 'utf-8')
-  fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
-  log.seek(0)
+  if path := os.environ.setdefault('LOG', 'ua.log'):
+    log = open(path, 'a+', encoding = 'utf-8')
+    fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    log.seek(0)
+  else:
+    log = open(os.devnull, 'r+', encoding = 'utf-8')
 except OSError as error:
-  die(1, path, error.strerror)
+  die(1, path or os.devnull, error.strerror)
 
 try:
   for item in log:
