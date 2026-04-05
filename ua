@@ -6,12 +6,10 @@ from contextlib import suppress
 
 def abort(items, log, pending):
   for id in pending:
-    result = {
+    append(items, log, {
       'type': 'function_call_output', 'call_id': id,
       'output': '{ "error": { "message": "Function call aborted" } }'
-    }
-    print(json.dumps(result), file = log, flush = True)
-    items.append(result)
+    })
   pending.clear()
 
 def agent(items, log, pending, tools):
@@ -19,8 +17,7 @@ def agent(items, log, pending, tools):
     with futures.ThreadPoolExecutor() as pool:
       for result in futures.as_completed(pool.submit(execute, *item, tools)
           for item in pending.items()):
-        items.append(result := result.result())
-        print(json.dumps(result), file = log, flush = True)
+        append(items, log, result.result())
     pending.clear()
 
     if not items or items[-1].get('role') == 'assistant' \
@@ -31,8 +28,11 @@ def agent(items, log, pending, tools):
       with suppress(KeyError, TypeError):
         if item['type'] == 'function_call':
           pending[item['call_id']] = item
-        print(json.dumps(item), file = log, flush = True)
-        items.append(item)
+        append(items, log, item)
+
+def append(items, log, item):
+  print(json.dumps(item), file = log, flush = True)
+  items.append(item)
 
 def bash(arguments):
   def trim(data, head = 2048, tail = 8192):
@@ -133,12 +133,6 @@ def generate(input, tools):
         case 'response.incomplete':
           if reason := chunk['response']['incomplete_details']['reason']:
             print('Truncated:', reason, end = '\n\n')
-
-def input(items, log, role):
-  if text := solicit():
-    result = { 'type': 'message', 'role': role, 'content': text }
-    print(json.dumps(result), file = log, flush = True)
-    items.append(result)
 
 def recap(items):
   for item in items:
@@ -248,7 +242,10 @@ for action in sys.argv[1:] or ['user', 'agent']:
     case 'agent' | 'continue':
       agent(items, log, pending, tools)
     case 'developer' | 'system' | 'user':
-      input(items, log, action)
+      if message := solicit():
+        append(items, log, {
+          'type': 'message', 'role': action, 'content': message
+        })
     case 'recap':
       recap(items)
     case _:
