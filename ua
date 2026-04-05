@@ -243,6 +243,7 @@ for action in sys.argv[1:] or ['user', 'agent']:
       agent(items, log, pending, tools)
     case 'developer' | 'system' | 'user':
       if message := solicit():
+        abort(items, log, pending)
         append(items, log, {
           'type': 'message', 'role': action, 'content': message
         })
