@@ -107,7 +107,7 @@ def generate(input, tools):
     'stream': True,
     'plugins': [ { 'id': 'web', 'engine': 'native' } ],
     'reasoning': { 'enabled': True },
-    'tools': [tools[id].schema for id in tools]
+    'tools': [tool.schema for tool in tools.values()]
   }).encode('utf-8'), {
     'Authorization': f'Bearer {os.environ['KEY']}',
     'Content-Type': 'application/json'
