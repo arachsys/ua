@@ -1,6 +1,7 @@
 #!/bin/python
 
 import fcntl, json, os, re, shlex, subprocess, sys, tempfile, urllib.request
+import concurrent.futures as futures
 from contextlib import suppress
 
 def abort(items, log, pending):
@@ -15,17 +16,11 @@ def abort(items, log, pending):
 
 def agent(items, log, pending, tools):
   while True:
-    for id, call in pending.items():
-      result = {
-        'type': 'function_call_output', 'call_id': id,
-        'output': '{ "error": { "message": "Invalid function call" } }'
-      }
-      with suppress(Exception):
-        name, arguments = call['name'], call['arguments']
-        if arguments and isinstance(arguments, str):
-          result['output'] = tools[name](arguments)
-      print(json.dumps(result), file = log, flush = True)
-      items.append(result)
+    with futures.ThreadPoolExecutor() as pool:
+      for result in futures.as_completed(pool.submit(execute, *item, tools)
+          for item in pending.items()):
+        items.append(result := result.result())
+        print(json.dumps(result), file = log, flush = True)
     pending.clear()
 
     if not items or items[-1].get('role') == 'assistant' \
@@ -88,6 +83,17 @@ bash.schema = {
 def die(status, *args):
   print(os.path.basename(sys.argv[0]), *args, file = sys.stderr, sep = ': ')
   sys.exit(status)
+
+def execute(id, call, tools):
+  result = {
+    'type': 'function_call_output', 'call_id': id,
+    'output': '{ "error": { "message": "Invalid function call" } }'
+  }
+  with suppress(Exception):
+    name, arguments = call['name'], call['arguments']
+    if arguments and isinstance(arguments, str):
+      result['output'] = tools[name](arguments)
+  return result
 
 def generate(input, tools):
   for config in ['API', 'KEY', 'MODEL']:

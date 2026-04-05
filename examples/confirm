@@ -6,7 +6,7 @@ else
   printf -v PROMPT '$ %s\nAllow execution? (Y/n) ' "${*@Q}"
 fi
 
-read -p "$PROMPT" -r REPLY <>/dev/tty >&0 2>&0
+{ flock 0 && read -p "$PROMPT" -r REPLY; } <>/dev/tty >&0 2>&0
 
 if [[ $? -eq 0 ]] && [[ $REPLY == ?([Yy]*) ]]; then
   exec "$@"
