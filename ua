@@ -104,7 +104,7 @@ def recap(items):
 
 def register(name, path):
   def run(arguments):
-    process = subprocess.run([path], capture_output = True, check = True,
+    process = subprocess.run(path, capture_output = True, check = True,
       encoding = 'utf-8', input = arguments)
     return process.stdout.removesuffix('\n')
   run.schema = { **json.loads(run('')), 'name': name }
