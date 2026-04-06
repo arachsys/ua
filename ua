@@ -96,22 +96,21 @@ def execute(id, call, tools):
   return result
 
 def generate(input, tools):
-  for config in ['API', 'KEY', 'MODEL']:
-    if config not in os.environ:
-      die(1, f'{config} is missing in the environment')
-
-  request = urllib.request.Request(os.environ['API'], json.dumps({
-    'model': os.environ['MODEL'],
-    'input': input,
-    'store': False,
-    'stream': True,
-    'plugins': [ { 'id': 'web', 'engine': 'native' } ],
-    'reasoning': { 'enabled': True },
-    'tools': [tool.schema for tool in tools.values()]
-  }).encode('utf-8'), {
-    'Authorization': f'Bearer {os.environ['KEY']}',
-    'Content-Type': 'application/json'
-  })
+  try:
+    request = urllib.request.Request(os.environ['API'], json.dumps({
+      'model': os.environ['MODEL'],
+      'input': input,
+      'store': False,
+      'stream': True,
+      'plugins': [ { 'id': 'web', 'engine': 'native' } ],
+      'reasoning': { 'enabled': True },
+      'tools': [tool.schema for tool in tools.values()]
+    }).encode('utf-8'), {
+      'Authorization': f'Bearer {os.environ['KEY']}',
+      'Content-Type': 'application/json'
+    })
+  except KeyError as error:
+    die(1, f'{error.args[0]} is not set')
 
   for chunk in stream(request):
     with suppress(KeyError, TypeError):
