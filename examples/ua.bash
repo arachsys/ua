@@ -6,8 +6,8 @@ ua() (
     export KEY=$(< ~/.config/secrets/openrouter)
   fi
 
-  if [[ ! -v SANDBOX ]] && [[ -x ~/.config/ua/sandbox ]]; then
-    export SANDBOX=~/.config/ua/sandbox
+  if [[ -x ~/.config/ua/shell ]]; then
+    export SHELL=~/.config/ua/shell
   fi
 
   if [[ ! -f ${LOG:-ua.log} ]] && [[ -f ~/.config/ua/system ]]; then
@@ -15,8 +15,7 @@ ua() (
   fi
 
   if [[ $* == chat ]]; then
-    export -n SANDBOX
-    exec ua
+    SHELL= exec ua
   else
     exec ua "$@"
   fi

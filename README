@@ -3,7 +3,7 @@ ua
 
 ua is a minimal agent harness, providing a command-line interface to a
 large language model accessed through an Open Responses API, and allowing
-it to access local tools including a bash shell.
+it to access local tools including a shell.
 
 
 Installation and configuration
@@ -23,18 +23,18 @@ Set API, KEY and MODEL to the endpoint, bearer key and model ID, e.g.
 ua appends to an NDJSON conversation log in LOG, defaulting to 'ua.log'.
 If LOG is an empty string, /dev/null is used and the log is not locked.
 
-The bash tool is built-in, but a directory of additional self-describing
-tool executables can be given in TOOLS. Each of these should read JSON
-input on stdin then produce JSON output on stdout. If stdin is empty,
-they should instead print their JSON input schema.
+The shell tool is built-in and passes commands from the model to SHELL
+on stdin. Change SHELL to wrap commands before execution: to authorise
+them, drop to a less privileged user, sandbox within more restrictive
+namespaces, or even run them on a different host. For instance, set
+SHELL to the examples/confirm wrapper to preview and confirm commands on
+the terminal before running them with bash. If SHELL is empty or unset,
+the shell tool is disabled.
 
-If SANDBOX is set, bash calls are wrapped with it, i.e. 'bash -c CMD'
-is run as 'SANDBOX bash -c CMD'. This can be used to confirm commands
-before execution, drop to a less privileged user, sandbox within more
-restrictive namespaces, or even run commands on a different host.
-
-Set SANDBOX to an empty string to execute bash calls without any wrapper.
-If SANDBOX is not defined at all, the built-in bash tool is disabled.
+A directory of additional self-describing tool executables can be given
+in TOOLS. Each of these should read JSON input on stdin then produce JSON
+output on stdout. If stdin is empty, they should instead print their JSON
+tool schema.
 
 
 User input
@@ -44,7 +44,7 @@ User input
 If stdin is a terminal, ua will get the message text via a text editor;
 otherwise, it will read it directly from stdin.
 
-An example system message explaining how the bash tool might be used is
+An example system message explaining how the shell tool might be used is
 provided in examples/system.txt.
 
 

@@ -34,52 +34,6 @@ def append(items, log, item):
   print(json.dumps(item), file = log, flush = True)
   items.append(item)
 
-def bash(arguments):
-  def trim(data, head = 2048, tail = 8192):
-    if len(data) > head + tail:
-      head = re.sub(rb'[^\n]*$', b'', data[:head])
-      tail = re.sub(rb'^[^\n]*', b'', data[-tail:])
-      skip = len(data) - len(head) - len(tail)
-      data = head + f'[{skip} bytes suppressed]'.encode('utf-8') + tail
-    with suppress(UnicodeError):
-      if b'\0' not in data:
-        return data.decode('utf-8')
-    return '[Binary output suppressed]'
-
-  with suppress(Exception):
-    arguments = json.loads(arguments)
-    try:
-      sandbox = shlex.split(os.environ.get('SANDBOX', ''))
-      command = [*sandbox, 'bash', '-c', arguments['command']]
-      process = subprocess.run(command, capture_output = True,
-        env = { k: v for k, v in os.environ.items() if k != 'SANDBOX' },
-        stdin = subprocess.DEVNULL, timeout = arguments.get('timeout'))
-    except subprocess.TimeoutExpired as error:
-      process =  subprocess.CompletedProcess(error.cmd, 124,
-        error.stdout, error.stderr)
-    return json.dumps({
-      'status': process.returncode,
-      'stdout': trim(process.stdout),
-      'stderr': trim(process.stderr)
-    })
-  return json.dumps({
-    'error': { 'message': 'Invalid arguments' }
-  })
-
-bash.schema = {
-  'type': 'function',
-  'name': 'bash',
-  'description': 'Run a bash command or multi-line script',
-  'parameters': {
-    'type': 'object',
-    'properties': {
-      'command': { 'type': 'string' },
-      'timeout': { 'type': 'number' }
-    },
-    'required': ['command']
-  }
-}
-
 def die(status, *args):
   print(os.path.basename(sys.argv[0]), *args, file = sys.stderr, sep = ': ')
   sys.exit(status)
@@ -156,6 +110,52 @@ def register(name, path):
   run.schema = { **json.loads(run('')), 'name': name }
   return run
 
+def shell(arguments):
+  def trim(data, head = 2048, tail = 8192):
+    if len(data) > head + tail:
+      head = re.sub(rb'[^\n]*$', b'', data[:head])
+      tail = re.sub(rb'^[^\n]*', b'', data[-tail:])
+      skip = len(data) - len(head) - len(tail)
+      data = head + f'[{skip} bytes suppressed]'.encode('utf-8') + tail
+    with suppress(UnicodeError):
+      if b'\0' not in data:
+        return data.decode('utf-8')
+    return '[Binary output suppressed]'
+
+  with suppress(Exception):
+    arguments = json.loads(arguments)
+    try:
+      stdin = arguments['stdin'].encode('utf-8')
+      if stdin and not stdin.endswith(b'\n'):
+        stdin += b'\n'
+      process = subprocess.run(os.environ['SHELL'], capture_output = True,
+        input = stdin, timeout = arguments.get('timeout'))
+    except subprocess.TimeoutExpired as error:
+      process = subprocess.CompletedProcess(error.cmd, 124,
+        error.stdout, error.stderr)
+    return json.dumps({
+      'status': process.returncode,
+      'stdout': trim(process.stdout),
+      'stderr': trim(process.stderr)
+    })
+  return json.dumps({
+    'error': { 'message': 'Invalid arguments' }
+  })
+
+shell.schema = {
+  'type': 'function',
+  'name': 'shell',
+  'description': 'Run a shell command or multi-line script',
+  'parameters': {
+    'type': 'object',
+    'properties': {
+      'stdin': { 'type': 'string' },
+      'timeout': { 'type': 'number' }
+    },
+    'required': ['stdin']
+  }
+}
+
 def solicit():
   try:
     if not sys.stdin.isatty():
@@ -196,7 +196,7 @@ Actions:
   system    add a system message to the conversation
   user      add a user message to the conversation
 Default action: user, agent
-Environment: API, KEY, LOG, MODEL, SANDBOX, TOOLS
+Environment: API, KEY, LOG, MODEL, SHELL, TOOLS
 ''', end = '', file = sys.stderr)
   sys.exit(64)
 
@@ -227,8 +227,8 @@ for item in items:
     if item['type'] == 'function_call_output':
       del pending[item['call_id']]
 
-if 'SANDBOX' in os.environ:
-  tools['bash'] = bash
+if os.environ.get('SHELL'):
+  tools['shell'] = shell
 with suppress(KeyError, OSError):
   for tool in os.listdir(dir := os.environ['TOOLS']):
     with suppress(Exception):
