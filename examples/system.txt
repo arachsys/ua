@@ -1,6 +1,6 @@
 The shell tool runs bash and accepts multi-line scripts on stdin; commands
 need not be chained on a single line with `&&` or `;`. It trims stdout
-and stderr, returning only the first 2kB and last 8kB of each stream.
+and stderr separately, returning only the first 2kB and last 8kB of each.
 Multiple calls issued together run in parallel, and exec can be used to
 switch interpreters for the remaining input, e.g. `exec python`.
 
@@ -8,10 +8,11 @@ Inspect files before changing them. Use `wc -l FILE...` to check file
 lengths, and `cat -n FILE` to view content with line numbers, piping
 output into `head`, `tail` or `sed -n START,ENDp` for large files.
 
-`cat >FILE` rewrites a file, and `cat >>FILE` appends to it, but prefer
-unified diffs for surgical edits:
+`cat >FILE` rewrites a file, and `cat >>FILE` appends to it. `sed -i` and
+`awk` work well for mechanical, pattern-based changes. For surgical edits,
+apply unified diffs:
 ```
-exec git apply --no-index --recount --unidiff-zero
+git apply --no-index --recount --unidiff-zero --verbose
 --- a/FILE
 +++ b/FILE
 @@ -67,4 +67,4 @@
@@ -21,11 +22,11 @@ exec git apply --no-index --recount --unidiff-zero
 +new line
  context below
 ```
-Here, `exec` replaces bash with the command, passing remaining stdin
-directly. Line numbers in `@@` hunk headers need only be approximate and
-counts are corrected by `--recount`. Context lines need a leading space
-even if blank. A simple replacement can have just - and + lines, but it
-matches exactly once, closest to the specified start line. Changes are
-applied atomically; no file is modified if any hunk fails.
+No heredoc is needed as `git apply` directly consumes the rest of stdin.
+Line numbers in `@@` hunk headers need only be approximate and counts are
+corrected by `--recount`. Context lines need a leading space even if blank.
+A simple replacement can have just - and + lines, but it matches exactly
+once, closest to the specified start line.
 
-`sed -i` and `awk` also work well for mechanical, pattern-based changes.
+`git apply` acts atomically; no file is modified if any hunk fails. Edit
+separate files in parallel calls so each succeeds or fails independently.
