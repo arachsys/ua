@@ -56,9 +56,11 @@ def generate(input, tools):
       'input': input,
       'store': False,
       'stream': True,
-      'plugins': [ { 'id': 'web', 'engine': 'native' } ],
       'reasoning': { 'enabled': True },
-      'tools': [tool.schema for tool in tools.values()]
+      'tools': [
+        *(tool.schema for tool in tools.values()),
+        { 'type': 'web_search' }
+      ]
     }).encode('utf-8'), {
       'Authorization': f'Bearer {os.environ['KEY']}',
       'Content-Type': 'application/json'
