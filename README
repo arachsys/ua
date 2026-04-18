@@ -23,6 +23,8 @@ Set API, KEY and MODEL to the endpoint, bearer key and model ID, e.g.
 ua appends to an NDJSON conversation log in LOG, defaulting to 'ua.log'.
 If LOG is an empty string, /dev/null is used and the log is not locked.
 
+If set, REASONING overrides the default reasoning effort for the model.
+
 The shell tool is built-in and passes commands from the model to SHELL
 on stdin. Change SHELL to wrap commands before execution: to authorise
 them, drop to a less privileged user, sandbox within more restrictive
