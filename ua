@@ -50,13 +50,18 @@ def execute(id, call, tools):
   return result
 
 def generate(input, tools):
+  if reasoning := os.environ.get('REASONING'):
+    reasoning = { 'enabled': True, 'effort': reasoning }
+  else:
+    reasoning = { 'enabled': reasoning is None }
+
   try:
     request = urllib.request.Request(os.environ['API'], json.dumps({
       'model': os.environ['MODEL'],
       'input': input,
+      'reasoning': reasoning,
       'store': False,
       'stream': True,
-      'reasoning': { 'enabled': True },
       'tools': [
         *(tool.schema for tool in tools.values()),
         { 'type': 'web_search' }
@@ -198,7 +203,7 @@ Actions:
   system    add a system message to the conversation
   user      add a user message to the conversation
 Default action: user, agent
-Environment: API, KEY, LOG, MODEL, SHELL, TOOLS
+Environment: API, KEY, LOG, MODEL, REASONING, SHELL, TOOLS
 ''', end = '', file = sys.stderr)
   sys.exit(64)
 
