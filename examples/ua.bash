@@ -1,6 +1,6 @@
 ua() (
   export API=${API:-https://openrouter.ai/api/v1/responses}
-  export MODEL=${MODEL:-anthropic/claude-opus-4.6}
+  export MODEL=${MODEL:-anthropic/claude-opus-4.7}
 
   if [[ ! -v KEY ]] && [[ -f ~/.config/secrets/openrouter ]]; then
     export KEY=$(< ~/.config/secrets/openrouter)

@@ -58,6 +58,7 @@ def generate(input, tools):
   try:
     request = urllib.request.Request(os.environ['API'], json.dumps({
       'model': os.environ['MODEL'],
+      'cache_control': { 'type': 'ephemeral' },
       'input': input,
       'reasoning': reasoning,
       'store': False,
