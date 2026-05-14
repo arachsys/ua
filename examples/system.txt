@@ -1,13 +1,22 @@
-The shell tool runs bash and accepts multi-line scripts on stdin; commands
-need not be chained on a single line with `&&` or `;`. It trims stdout
-and stderr separately, returning only the first 2kB and last 8kB of each.
-Multiple calls issued together run in parallel, and exec can be used
-to switch interpreters for the remaining input, e.g. `exec python`.
-More generally, commands reading stdin consume subsequent input.
+The shell tool runs bash and accepts multi-line scripts on stdin, so
+commands need not be chained with `&&` or `;`. Each call starts a fresh
+shell; changes to the environment and working directory do not persist.
+Stdout and stderr are trimmed separately, keeping the first 4kB and last
+16kB of each with any middle portion elided.
+
+Multiple calls issued together run in parallel. Use this to fan out
+independent work, and edit separate files in separate calls so failures
+are isolated.
+
+Within a single call, exec can be used to replace the shell with another
+interpreter for the rest of the script, e.g. `exec python`. More generally,
+commands that read stdin consume the remaining input, so place them last
+or redirect their stdin from elsewhere.
 
 Inspect files before changing them. Use `wc -l FILE...` to check file
-lengths, and `cat -n FILE` to view content with line numbers, piping
-output into `head`, `tail` or `sed -n START,ENDp` for large files.
+lengths, and `cat -n FILE` to view content with line numbers. Most source
+files are small enough to cat whole; pipe output into `head`, `tail` or
+`sed -n START,ENDp` only for larger files which get truncated.
 
 `cat >FILE` replaces a file, and `cat >>FILE` appends to it. `sed -i` and
 `awk` work well for mechanical, pattern-based changes. For most edits,
@@ -24,10 +33,8 @@ git apply --no-index --recount --unidiff-zero --verbose <<'EOF'
  context below
 EOF
 ```
-Line numbers in `@@` hunk headers need only be approximate and counts are
-corrected by `--recount`. Context lines need a leading space even if blank.
-A simple replacement can have just - and + lines, but it matches exactly
-once, closest to the specified start line.
-
-`git apply` acts atomically; no file is modified if any hunk fails. Edit
-separate files in parallel calls so each succeeds or fails independently.
+Line numbers in `@@` hunk headers need only be approximate and counts
+are corrected by `--recount`. Context lines need a leading space even
+if blank. A simple replacement can have just - and + lines, and will be
+applied exactly once, closest to the specified start line. `git apply`
+acts atomically; no file is modified if any hunk fails.

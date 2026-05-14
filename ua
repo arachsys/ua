@@ -119,7 +119,7 @@ def register(name, path):
   return run
 
 def shell(arguments):
-  def trim(data, head = 2048, tail = 8192):
+  def trim(data, head = 4096, tail = 16384):
     if len(data) > head + tail:
       head = re.sub(rb'[^\n]*$', b'', data[:head])
       tail = re.sub(rb'^[^\n]*', b'', data[-tail:])
