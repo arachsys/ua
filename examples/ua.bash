@@ -14,8 +14,11 @@ ua() (
     command ua system < ~/.config/ua/system
   fi
 
-  if [[ $* == chat ]]; then
-    SHELL= exec ua
+  if [[ $# -eq 0 ]] && type rledit >/dev/null 2>&1; then
+    export EDITOR=rledit VISUAL=${VISUAL:-${EDITOR:-vi}}
+    while command ua user && echo && command ua agent; do
+      continue
+    done
   else
     exec ua "$@"
   fi
