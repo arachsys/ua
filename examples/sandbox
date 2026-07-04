@@ -1,0 +1,23 @@
+#!/bin/bash
+
+export -n $(compgen -e)
+export API HOME KEY LOG LOGNAME MODEL REASONING TOOLS USER
+export PATH=/bin SHELL=/bin/bash
+
+UIDMAP=--map-users=0:65536:65535
+GIDMAP=--map-groups=0:65536:65535
+
+if LOG=$(realpath "$LOG") && [[ $LOG == "$PWD"/* ]]; then
+  LOG=~/${LOG#"$PWD"/}
+elif [[ -z $LOG ]] || [[ $LOG == ~/* ]]; then
+  unset LOG
+fi 2>/dev/null
+
+if IFS= read -d '' -r STDIN; STDIN=${STDIN%$'\n'}; flock 1; then
+  printf '# %s\n' "$STDIN"
+fi 2>/dev/null >/dev/tty
+
+exec unshare -m sh -e /dev/fd/3 <<< "$STDIN" 3<<EOF
+  mount -m -n --bind $UIDMAP $GIDMAP . ~
+  cd && exec unshare -S 0 -G 0 -U $UIDMAP $GIDMAP bash 3>&-
+EOF
