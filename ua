@@ -97,18 +97,18 @@ def generate(input, tools):
 
 def recap(items):
   for item in items:
-    with suppress(KeyError, TypeError):
-      if item['type'] != 'message':
-        continue
-      if isinstance(item['content'], list):
+    with suppress(KeyError, TypeError, ValueError):
+      if item['type'] == 'message' and isinstance(item['content'], list):
         for content in item['content']:
           with suppress(KeyError, TypeError):
-            print(content['text'].strip('\n'), end = '\n\n')
+            yield content['text'].strip('\n'), item['role']
           for annotation in content['annotations']:
             with suppress(KeyError, TypeError):
-              print('Reference:', annotation['url'], end = '\n\n')
-      if isinstance(item['content'], str):
-        print(item['content'], end = '\n\n')
+              yield 'Reference: ' + annotation['url'], item['role']
+      if item['type'] == 'message' and isinstance(item['content'], str):
+        yield item['content'].strip('\n'), item['role']
+      if item['type'] == 'function_call' and item['name'] == 'shell':
+        yield json.loads(item['arguments'])['stdin'], 'shell'
 
 def register(name, path):
   def run(arguments):
@@ -255,6 +255,11 @@ for action in sys.argv[1:] or ['user', 'agent']:
           'type': 'message', 'role': action, 'content': message
         })
     case 'recap':
-      recap(items)
+      for text, role in recap(items):
+        if role == 'shell':
+          text = '# ' + text
+        elif role != 'assistant':
+          text = re.sub(r'(?am)^', '> ', text)
+        print(text, end = '\n\n')
     case _:
       usage()
