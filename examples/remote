@@ -1,11 +1,7 @@
 #!/bin/bash
 
-if IFS= read -d '' -r STDIN; STDIN=${STDIN%$'\n'}; flock 1; then
-  printf '# %s\n' "$STDIN"
-fi 2>/dev/null >/dev/tty
-
 if [[ -n $TARGET ]]; then
-  ssh -o BatchMode=yes -T -- "$TARGET" <<< "$STDIN"
+  ssh -o BatchMode=yes -T -- "$TARGET"
 else
   echo 'TARGET is not set' >&2
   exit 1

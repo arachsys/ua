@@ -98,17 +98,17 @@ def generate(input, tools):
 def recap(items):
   for item in items:
     with suppress(KeyError, TypeError, ValueError):
-      if item['type'] == 'message' and isinstance(item['content'], list):
+      if item['type'] != 'message':
+        continue
+      if isinstance(item['content'], list):
         for content in item['content']:
           with suppress(KeyError, TypeError):
             yield content['text'].strip('\n'), item['role']
           for annotation in content['annotations']:
             with suppress(KeyError, TypeError):
               yield 'Reference: ' + annotation['url'], item['role']
-      if item['type'] == 'message' and isinstance(item['content'], str):
+      if isinstance(item['content'], str):
         yield item['content'].strip('\n'), item['role']
-      if item['type'] == 'function_call' and item['name'] == 'shell':
-        yield json.loads(item['arguments'])['stdin'], 'shell'
 
 def register(name, path):
   def run(arguments):
@@ -256,9 +256,7 @@ for action in sys.argv[1:] or ['user', 'agent']:
         })
     case 'recap':
       for text, role in recap(items):
-        if role == 'shell':
-          text = '# ' + text
-        elif role != 'assistant':
+        if role != 'assistant':
           text = re.sub(r'(?am)^', '> ', text)
         print(text, end = '\n\n')
     case _:

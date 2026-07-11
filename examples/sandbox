@@ -13,11 +13,7 @@ elif [[ -z $LOG ]] || [[ $LOG == ~/* ]]; then
   unset LOG
 fi 2>/dev/null
 
-if IFS= read -d '' -r STDIN; STDIN=${STDIN%$'\n'}; flock 1; then
-  printf '# %s\n' "$STDIN"
-fi 2>/dev/null >/dev/tty
-
-exec unshare -m sh -e /dev/fd/3 <<< "$STDIN" 3<<EOF
+exec unshare -m sh -e /dev/fd/3 3<<EOF
   mount -m -n --bind $UIDMAP $GIDMAP . ~
   cd && exec unshare -S 0 -G 0 -U $UIDMAP $GIDMAP bash 3>&-
 EOF

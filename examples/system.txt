@@ -38,3 +38,6 @@ are corrected by `--recount`. Context lines need a leading space even
 if blank. A simple replacement can have just - and + lines, and will be
 applied exactly once, closest to the specified start line. `git apply`
 acts atomically; no file is modified if any hunk fails.
+
+The user does not see tool calls by default, so please summarise any
+relevant results.
