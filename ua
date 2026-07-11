@@ -8,7 +8,7 @@ def abort(items, log, pending):
   for id in pending:
     append(items, log, {
       'type': 'function_call_output', 'call_id': id,
-      'output': '{ "error": { "message": "Function call aborted" } }'
+      'output': '{ "error": { "message": "Call aborted by user" } }'
     })
   pending.clear()
 
@@ -140,7 +140,7 @@ def shell(arguments):
         input = stdin, timeout = arguments.get('timeout'))
     except subprocess.TimeoutExpired as error:
       process = subprocess.CompletedProcess(error.cmd, 124,
-        error.stdout, error.stderr)
+        error.stdout or b'', error.stderr or b'')
     return json.dumps({
       'status': process.returncode,
       'stdout': trim(process.stdout),
