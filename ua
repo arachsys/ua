@@ -203,8 +203,8 @@ Actions:
   recap     print the conversation history
   system    add a system message to the conversation
   user      add a user message to the conversation
-Default action: user, agent
-Environment: API, KEY, LOG, MODEL, REASONING, SHELL, TOOLS
+Environment:
+  API, KEY, LOG, MODEL, REASONING, SHELL, TOOLS
 ''', end = '', file = sys.stderr)
   sys.exit(64)
 
@@ -212,10 +212,13 @@ items, pending, tools = [], {}, {}
 sys.tracebacklimit = 0
 
 try:
-  if path := os.environ.setdefault('LOG', 'ua.log'):
+  path = os.environ.setdefault('LOG', 'ua.log')
+  if path and set(sys.argv[1:]) & { 'abort', 'agent', 'system', 'user' }:
     log = open(path, 'a+', encoding = 'utf-8')
     fcntl.flock(log, fcntl.LOCK_EX | fcntl.LOCK_NB)
     log.seek(0)
+  elif path and set(sys.argv[1:]) & { 'recap' }:
+    log = open(path, 'r', encoding = 'utf-8')
   else:
     log = open(os.devnull, 'r+', encoding = 'utf-8')
 except OSError as error:
@@ -242,22 +245,22 @@ with suppress(KeyError, OSError):
     with suppress(Exception):
       tools[tool] = register(tool, os.path.join(dir, tool))
 
-for action in sys.argv[1:] or ['user', 'agent']:
+for action in sys.argv[1:] or ['usage']:
   match action:
     case 'abort':
       abort(items, log, pending)
-    case 'agent' | 'continue':
+    case 'agent':
       agent(items, log, pending, tools)
-    case 'developer' | 'system' | 'user':
-      if message := solicit():
-        abort(items, log, pending)
-        append(items, log, {
-          'type': 'message', 'role': action, 'content': message
-        })
     case 'recap':
       for text, role in recap(items):
         if role != 'assistant':
           text = re.sub(r'(?am)^', '> ', text)
         print(text, end = '\n\n')
+    case 'system' | 'user':
+      if message := solicit():
+        abort(items, log, pending)
+        append(items, log, {
+          'type': 'message', 'role': action, 'content': message
+        })
     case _:
       usage()
