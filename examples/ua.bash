@@ -92,6 +92,7 @@ EOF
 
 if [[ -v PS1 ]]; then
   readline-agent() {
+    local STATE=$(stty -g)
     if [[ $READLINE_LINE == *([[:space:]]) ]]; then
       READLINE_LINE=
       ua agent
@@ -100,17 +101,23 @@ if [[ -v PS1 ]]; then
       READLINE_LINE=
       ua agent
     fi
+    stty "$STATE"
   }
 
   readline-edit() {
-    local TMP=$(mktemp --tmpdir bash-fc.XXXXXX 2>/dev/null)
-    if [[ -n $TMP ]]; then
+    local STATE=$(stty -g) TMP
+    if TMP=$(mktemp --tmpdir bash-fc.XXXXXX); then
       printf '%s\n' "$READLINE_LINE" >"$TMP"
-      if ${FCEDIT:-${EDITOR:-vi}} "$TMP"; then
+      eval "${FCEDIT:-${EDITOR:-vi}}" "${TMP@Q}"
+      if [[ $? -ne 148 ]]; then
         READLINE_LINE=$(< "$TMP")
         READLINE_POINT=${#READLINE_LINE}
+        rm -f -- "$TMP"
+      else
+        READLINE_LINE=
       fi
     fi
+    stty "$STATE"
   }
 
   bind '"\C-j": "\C-v\C-j"'
