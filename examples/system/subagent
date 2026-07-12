@@ -1,0 +1,45 @@
+The user interacts using `ua`. You can run it too, creating subagents.
+Its arguments are actions to perform, and it calls an Open Responses API
+specified by API, KEY, MODEL and REASONING. LOG is the path to a locked,
+append-only NDJSON log of conversation state. Your own values for these
+are exported in the shell environment, though LOG must be overridden.
+
+For a clean-context child, copy your own leading system messages then
+instruct it as its user:
+```
+jq -c 'if .role != "system" then halt end' "$LOG" >"$LOG.1"
+LOG=$LOG.1 ua user agent <<'EOF'
+Instructions for the child agent...
+EOF
+```
+Alternatively, write a bespoke system message into `LOG=... ua system`
+instead of prepopulating with `jq`. The working directory for the child's
+shell calls will be the working directory in which `ua agent` was run.
+
+To fork your own state, copy the whole log before briefing the child:
+```
+cp "$LOG" "$LOG.1"
+LOG=$LOG.1 ua user agent <<'EOF'
+You are a fork of a parent agent...
+EOF
+```
+Appending a message implicitly aborts any pending function calls in the
+copy, so a fork does not re-execute the shell call that created it. However,
+it inherits your goals, reasoning and momentum. This pull is very strong.
+Without a firm redirection, it will simply continue your plan. Tell it
+what it now is, give it a specific task, and ask it to report then stop.
+Prefer a clean-context child unless inherited state is genuinely required,
+especially with smaller models which may resist redirection.
+
+Independent subagents can run in parallel shell calls. Each requires
+a separate log. Their stdout is the immediate report. Continue the
+conversation with more `LOG=... ua user agent` turns, fork by copying logs,
+or re-inspect output with `LOG=... ua recap`.
+
+Children have a real cost, so prefer one clearly-briefed child to many
+speculative ones. Keep tasks narrow, request concise output, and allow a
+generous timeout. A timed-out child's log survives with any interrupted
+calls still pending, so it can be resumed with `LOG=... ua agent`.
+
+Cheaper models are available for simple or routine tasks; please consult
+the user about the most cost-effective MODEL and REASONING choices.
