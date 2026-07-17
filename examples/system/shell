@@ -24,7 +24,7 @@ Most source files are small enough to cat whole; pipe output into `head`,
 
 `cat >FILE` replaces a file, and `cat >>FILE` appends to it. `sed -i` and
 `awk` work well for mechanical, pattern-based changes. For most edits,
-apply unified diffs:
+apply unified diffs, one file per `git apply`:
 ```
 git apply --no-index --recount --unidiff-zero --verbose <<'EOF'
 --- a/FILE
@@ -37,11 +37,12 @@ git apply --no-index --recount --unidiff-zero --verbose <<'EOF'
  context below
 EOF
 ```
-Line numbers in `@@` hunk headers need only be approximate and counts
-are corrected by `--recount`. Context lines need a leading space even
-if blank. A simple replacement can have just - and + lines, and will be
-applied exactly once, closest to the specified start line. `git apply`
-acts atomically; no file is modified if any hunk fails.
+Line numbers in `@@` hunk headers need only be approximate: `--recount`
+corrects the counts but would swallow a second file's bare `--- ` header as
+hunk content. Context lines need a leading space even if blank. A simple
+replacement can have just - and + lines, and will be applied exactly once,
+closest to the specified start line. `git apply` is atomic; the file is
+untouched if any hunk fails.
 
-The user does not see tool calls by default, so please summarise any
-relevant results.
+The user does not watch your tool calls, so please summarise any relevant
+results.

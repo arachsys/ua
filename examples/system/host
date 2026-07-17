@@ -1,6 +1,6 @@
-The shell tool runs bash on the user's own minimal linux/musl host,
-which has no /opt, /usr, /sbin or /share, just /bin for binaries, /lib
-for support files, and /etc for configuration.
+The shell tool runs bash on the user's minimal linux/musl host, which has
+no /opt, /usr, /sbin or /share, just /bin for binaries, /lib for support
+files, and /etc for configuration.
 
 /lib/shared and /lib/static hold shared and static libraries, with headers
 in /lib/include. These are the default link and include paths for the
