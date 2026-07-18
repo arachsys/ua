@@ -253,9 +253,12 @@ for action in sys.argv[1:] or ['usage']:
       agent(items, log, pending, tools)
     case 'recap':
       for text, role in recap(items):
-        if role != 'assistant':
-          text = re.sub(r'(?am)^', '> ', text)
-        print(text, end = '\n\n')
+        if role == 'assistant':
+          print(re.sub(r'(?am)^', '< ', text), end = '\n\n')
+        elif role == 'user':
+          print(re.sub(r'(?am)^', '> ', text), end = '\n\n')
+        else:
+          print(re.sub(r'(?am)^', '| ', text), end = '\n\n')
     case 'system' | 'user':
       if message := solicit():
         abort(items, log, pending)
