@@ -20,6 +20,10 @@ ua() {
         if [[ $1 == recap ]] && [[ ! -f $LOG ]]; then
           echo "ua: $LOG not found" >&2
           exit 1
+        elif [[ $1 == recap ]] && [[ -t 1 ]]; then
+          command ua recap | sed -E -e 's/^> ?(.*)/\c[[32m\1\c[[0m/' \
+            -e 's/^\| ?(.*)/\c[[34m\1\c[[0m/' -e 's/^< ?//'
+          exit ${PIPESTATUS[0]}
         elif [[ $1 == user ]] && [[ ! -s $LOG ]]; then
           find -L ~/.config/ua/system -type f -print0 \
               | while IFS= read -d '' -r FILE; do
@@ -42,7 +46,7 @@ ua() {
       elif [[ $# -ge 3 ]] && [[ -d $2 ]]; then
         ANCHOR=$(realpath -m "$2") && LOG=$(realpath -m "$3")
       else
-        echo "ua: $2 is not a directory" >&2
+        echo "ua: $2 is not a directory or log file" >&2
         return 1
       fi
       ;;
@@ -92,12 +96,13 @@ EOF
 
 if [[ -v PS1 ]]; then
   readline-agent() {
-    local STATE=$(stty -g)
+    local HIGHLIGHT STATE=$(stty -g)
     if [[ $READLINE_LINE == *([[:space:]]) ]]; then
       READLINE_LINE=
       ua agent
     elif ua "${1:-user}" <<< "$READLINE_LINE"; then
-      printf '%s\n\n' "> ${READLINE_LINE//$'\n'/$'\n> '}"
+      HIGHLIGHT=34 && [[ $1 == ?(user) ]] && HIGHLIGHT=32
+      printf '\e[%sm%s\e[0m\n\n' "$HIGHLIGHT" "$READLINE_LINE"
       READLINE_LINE=
       ua agent
     fi
