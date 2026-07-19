@@ -139,7 +139,7 @@ def shell(arguments):
     tail = int(max(arguments.get('tail', 16384), 1))
     try:
       process = subprocess.run(os.environ['SHELL'], capture_output = True,
-        input = stdin, timeout = arguments.get('timeout'))
+        input = stdin, timeout = arguments.get('timeout', 30) or None)
     except subprocess.TimeoutExpired as error:
       process = subprocess.CompletedProcess(error.cmd, 124,
         error.stdout or b'', error.stderr or b'')
@@ -162,7 +162,7 @@ shell.schema = {
       'stdin': { 'type': 'string' },
       'head': { 'type': 'integer', 'default': 4096 },
       'tail': { 'type': 'integer', 'default': 16384 },
-      'timeout': { 'type': 'number' }
+      'timeout': { 'type': 'number', 'minimum': 0, 'default': 30 }
     },
     'required': ['stdin']
   }

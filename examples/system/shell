@@ -7,9 +7,10 @@ Stdout and stderr are trimmed separately, keeping an adjustable head
 (default 4096 bytes) and tail (default 16384 bytes) of each, with any
 middle portion elided.
 
-Pass a timeout in seconds for any command that could hang. A timed-out
-call returns status 124 with any partial output. Calls wait on background
-processes inheriting stdout or stderr; avoid this with `&>/dev/null &`.
+There is a 30-second default timeout, but this can be adjusted or set to
+zero for no limit. A timed-out call returns status 124 with any partial
+output. Calls wait on background processes inheriting stdout or stderr;
+avoid this with `&>/dev/null &`.
 
 Multiple calls issued together run in parallel. Use this to fan out
 independent work, and edit separate files in separate calls so failures
