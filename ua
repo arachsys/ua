@@ -119,7 +119,7 @@ def register(name, path):
   return run
 
 def shell(arguments):
-  def trim(data, head = 4096, tail = 16384):
+  def trim(data, head, tail):
     if len(data) > head + tail:
       head = re.sub(rb'[^\n]*$', b'', data[:head])
       tail = re.sub(rb'^[^\n]*', b'', data[-tail:])
@@ -132,10 +132,12 @@ def shell(arguments):
 
   with suppress(Exception):
     arguments = json.loads(arguments)
+    stdin = arguments['stdin'].encode('utf-8')
+    if stdin and not stdin.endswith(b'\n'):
+      stdin += b'\n'
+    head = int(max(arguments.get('head', 4096), 0))
+    tail = int(max(arguments.get('tail', 16384), 1))
     try:
-      stdin = arguments['stdin'].encode('utf-8')
-      if stdin and not stdin.endswith(b'\n'):
-        stdin += b'\n'
       process = subprocess.run(os.environ['SHELL'], capture_output = True,
         input = stdin, timeout = arguments.get('timeout'))
     except subprocess.TimeoutExpired as error:
@@ -143,8 +145,8 @@ def shell(arguments):
         error.stdout or b'', error.stderr or b'')
     return json.dumps({
       'status': process.returncode,
-      'stdout': trim(process.stdout),
-      'stderr': trim(process.stderr)
+      'stdout': trim(process.stdout, head, tail),
+      'stderr': trim(process.stderr, head, tail)
     })
   return json.dumps({
     'error': { 'message': 'Invalid arguments' }
@@ -158,6 +160,8 @@ shell.schema = {
     'type': 'object',
     'properties': {
       'stdin': { 'type': 'string' },
+      'head': { 'type': 'integer', 'default': 4096 },
+      'tail': { 'type': 'integer', 'default': 16384 },
       'timeout': { 'type': 'number' }
     },
     'required': ['stdin']

@@ -1,8 +1,11 @@
 The shell tool runs bash and accepts multi-line scripts on stdin, so
 commands need not be chained with `&&` or `;`. Each call starts a fresh
 shell in the home directory; changes to the environment and working
-directory do not persist. Stdout and stderr are trimmed separately,
-keeping the first 4kB and last 16kB of each with any middle portion elided.
+directory do not persist.
+
+Stdout and stderr are trimmed separately, keeping an adjustable head
+(default 4096 bytes) and tail (default 16384 bytes) of each, with any
+middle portion elided.
 
 Pass a timeout in seconds for any command that could hang. A timed-out
 call returns status 124 with any partial output. Calls wait on background
