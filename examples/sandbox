@@ -13,7 +13,7 @@ elif [[ -z $LOG ]] || [[ $LOG == ~/* ]]; then
   unset LOG
 fi 2>/dev/null
 
-exec unshare -m sh -e /dev/fd/3 3<<EOF
+exec setsid -w unshare -m sh -e /dev/fd/3 3<<EOF
   mount -m -n --bind $UIDMAP $GIDMAP . ~
   cd && exec unshare -S 0 -G 0 -U $UIDMAP $GIDMAP bash 3>&-
 EOF
