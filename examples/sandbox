@@ -4,8 +4,9 @@ export -n $(compgen -e)
 export API HOME KEY LOG LOGNAME MODEL REASONING TOOLS USER
 export PATH=/bin SHELL=/bin/bash
 
-UIDMAP=--map-users=0:65536:65535
-GIDMAP=--map-groups=0:65536:65535
+if set -e -o noclobber; 2>/dev/null >/run/ua.ns; then
+  unshare --user=/run/ua.ns --map-{users,groups}=0:65536:65535 true
+fi
 
 if LOG=$(realpath "$LOG") && [[ $LOG == "$PWD"/* ]]; then
   LOG=~/${LOG#"$PWD"/}
@@ -14,6 +15,6 @@ elif [[ -z $LOG ]] || [[ $LOG == ~/* ]]; then
 fi 2>/dev/null
 
 exec setsid -w unshare -m sh -e /dev/fd/3 3<<EOF
-  mount -m -n --bind $UIDMAP $GIDMAP . ~
-  cd && exec unshare -S 0 -G 0 -U $UIDMAP $GIDMAP bash 3>&-
+  mount -m -n --bind --map-users=/run/ua.ns . ~
+  cd && exec nsenter -S 0 -G 0 --user=/run/ua.ns bash 3>&-
 EOF
