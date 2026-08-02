@@ -61,6 +61,7 @@ def generate(input, tools):
       'cache_control': { 'type': 'ephemeral' },
       'input': input,
       'reasoning': reasoning,
+      'safety_identifier': os.environ['KEY'][-16:],
       'store': False,
       'stream': True,
       'tools': [
