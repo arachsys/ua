@@ -80,12 +80,10 @@ def generate(input, tools):
       die(1, chunk['error']['message'])
     with suppress(KeyError, TypeError):
       match chunk['type']:
-        case 'response.output_text.delta':
-          if delta := chunk['delta']:
-            print(delta, end = '', flush = True)
-        case 'response.output_text.done':
-          if chunk['text']:
-            print(end = '\n\n', flush = True)
+        case 'response.output_text.delta' | 'response.refusal.delta':
+          print(chunk['delta'], end = '', flush = True)
+        case 'response.output_text.done' | 'response.refusal.done':
+          print(end = '\n\n', flush = True)
         case 'response.content_part.done':
           for annotation in chunk['part']['annotations']:
             with suppress(KeyError, TypeError):
@@ -103,8 +101,9 @@ def recap(items):
         continue
       if isinstance(item['content'], list):
         for content in item['content']:
-          with suppress(KeyError, TypeError):
-            yield content['text'].strip('\n'), item['role']
+          for kind in 'text', 'refusal':
+            with suppress(KeyError, TypeError):
+              yield content[kind].strip('\n'), item['role']
           for annotation in content['annotations']:
             with suppress(KeyError, TypeError):
               yield 'Reference: ' + annotation['url'], item['role']
