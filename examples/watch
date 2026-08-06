@@ -1,2 +1,29 @@
 #!/bin/bash
-tail -f -n +1 "${1:-ua.log}" | jq .
+
+if [[ $# -eq 0 ]]; then
+  echo "Usage: ${0##*/} [-r] LOGFILE..." >&2
+  exit 64
+fi
+
+if [[ $# -gt 1 ]] && [[ $1 == -r ]]; then
+  tail -f -n +1 "${@:2}" | jq -C .
+  exit $?
+fi
+
+tail -f -n +1 "$@" | jq -f /dev/fd/3 -j 3<<'EOF'
+  if .role == "assistant" then
+    .content[]? | "\(.text // empty)\n\n"
+  elif .role == "user" then
+    "\u001b[32m\(.content // empty)\u001b[0m\n\n"
+  elif .type == "message" then
+    "\u001b[34m\(.content // empty)\u001b[0m\n\n"
+  elif .type == "function_call" and .name == "shell" then
+    .arguments | fromjson? | "\u001b[31m\(.stdin // empty)\u001b[0m\n\n"
+  elif .type == "function_call" then
+    "\u001b[35mTool call: \(.name)\u001b[0m\n\n"
+  elif .type == "reasoning" then
+    ( .content[]?, .summary[]? ) | "\u001b[36m\(.text // empty)\u001b[0m\n\n"
+  else
+    empty
+  end
+EOF
