@@ -155,7 +155,7 @@ def shell(arguments):
 shell.schema = {
   'type': 'function',
   'name': 'shell',
-  'description': 'Run a shell command or multi-line script',
+  'description': 'Run a bash script supplied on stdin',
   'parameters': {
     'type': 'object',
     'properties': {

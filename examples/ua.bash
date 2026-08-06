@@ -25,7 +25,7 @@ ua() {
             -e 's/^\| ?(.*)/\c[[34m\1\c[[0m/' -e 's/^< ?//'
           exit ${PIPESTATUS[0]}
         elif [[ $1 == user ]] && [[ ! -s $LOG ]]; then
-          find -L ~/.config/ua/system -type f -print0 \
+          find -L ~/.config/ua/system -type f -print0 2>/dev/null \
               | while IFS= read -d '' -r FILE; do
             command ua system < "$FILE"
           done 2>/dev/null
